@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model Student {
+  id           String       @id @default(cuid())
+  fullName     String
+  matricNumber String       @unique
+  department   String
+  level        String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  attendances  Attendance[]
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  timestamp DateTime @default(now())
+}
+
+model Admin {
+  id           String @id @default(cuid())
+  username     String @unique
+  passwordHash String
+}
