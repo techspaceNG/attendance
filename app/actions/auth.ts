@@ -20,12 +20,25 @@ export async function loginAction(prevState: any, formData: FormData) {
 
     const { username, password } = result.data;
 
-    const admin = await prisma.admin.findUnique({
+    let admin = await prisma.admin.findUnique({
         where: { username },
     });
 
     if (!admin) {
-        return { error: 'Invalid credentials' };
+        // If no admins exist, create the first one automatically on first login attempt
+        const adminCount = await prisma.admin.count();
+        if (adminCount === 0 && username === 'admin') {
+            const { hash } = await import('bcryptjs');
+            const hashedPassword = await hash(password, 10);
+            admin = await prisma.admin.create({
+                data: {
+                    username: 'admin',
+                    passwordHash: hashedPassword,
+                },
+            });
+        } else {
+            return { error: 'Invalid credentials' };
+        }
     }
 
     const isValid = await compare(password, admin.passwordHash);
